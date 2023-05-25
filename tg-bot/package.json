@@ -1,0 +1,24 @@
+{
+  "name": "tg-summarizer",
+  "version": "1.0.0",
+  "description": "telegram bot summarizer",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mozilla/readability": "^0.4.4",
+    "@xenova/transformers": "^2.0.1",
+    "axios": "^1.4.0",
+    "dotenv": "^16.0.3",
+    "grammy": "^1.16.1",
+    "jsdom": "^22.0.0",
+    "validate.io-uri": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  }
+}
