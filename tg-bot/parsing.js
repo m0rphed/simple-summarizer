@@ -3,43 +3,52 @@ import { JSDOM } from 'jsdom';
 import axios from 'axios';
 import fetch from 'node-fetch';
 
-async function checkArchive(url) {
+
+const getPageHTML = async (pageURL) => {
+    // fetch the web page content
+    const response = await axios.get(pageURL);
+    return response.data;
+}
+
+const checkArchive = async (url) => {
     const googleCacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${url}`;
     const waybackMachineUrl = `https://web.archive.org/save/${url}`;
 
     // Check Google Cache
     const googleCacheResponse = await fetch(googleCacheUrl);
     if (googleCacheResponse.status === 200) {
-        const content = await googleCacheResponse.text();
-        console.log('Google Cache Content:', content);
+        console.log('Google Cache: ✅');
+        // const content = await googleCacheResponse.text();
+        // console.log('Google Cache Content:', content);
         return googleCacheUrl;
     }
+
+    console.log('Google Cache: ❌');
 
     // Check Wayback Machine
     const waybackMachineResponse = await fetch(waybackMachineUrl);
     if (waybackMachineResponse.status === 200) {
-        const content = await waybackMachineResponse.text();
-        console.log('Wayback Machine Content:', content);
+        console.log('Wayback Machine: ✅');
+        // const content = await waybackMachineResponse.text();
+        // console.log('Wayback Machine Content:', content);
         return waybackMachineUrl;
     }
+
+    console.log('Wayback Machine: ❌');
 
     return null; // URL not available in Google Cache or Wayback Machine
 }
 
-const getReadableObj = async (articleURL) => {
-    // fetch the web page content
-    const response = await axios.get(articleURL);
-    const html = response.data;
-
+const getReadableObj = async (pageHTML, pageURL) => {
     // extract the article text using Readability
-    const dom = new JSDOM(html, { url: articleURL });
+    const dom = new JSDOM(pageHTML, { url: pageURL });
     const reader = new Readability(dom.window.document);
     const article = reader.parse();
 
     const title = article.title.trimStart().trimEnd();
     const textBody = article.textContent.trimStart().trimEnd();
 
-    const res = {
+    const resObj = {
         'language': article.lang,
         'byline_or_author': article.byline,
         'title': title,
@@ -47,27 +56,33 @@ const getReadableObj = async (articleURL) => {
         'length': title.length + textBody.length,
     };
 
-    return res;
+    return resObj;
+}
+
+export const textFromObj = (articleObj) => {
+    return 'Title: ' +
+        articleObj.title +
+        '\n\n' + articleObj.text_body;
 }
 
 export const getReadableText = async (articleURL) => {
-    // fetch the web page content
-    const response = await axios.get(articleURL)
-    const html = response.data;
+    try {
+        const html = await getPageHTML(articleURL);
+        const obj = await getReadableObj(html, articleURL);
+        return textFromObj(obj);
+    } catch (error) {
+        if (error.response && (error.response.status === 404 || error.response.status === 403)) {
+            console.log('❌ Problems with URL, checking in archives...');
+            // Fetching failed with 404 or 403 response, check archive
+            const archiveURL = await checkArchive(articleURL);
 
-    // extract the article text using Readability
-    const dom = new JSDOM(html, { url: articleURL });
-    const reader = new Readability(dom.window.document);
-    const article = reader.parse();
-
-    return 'Article title: ' + article.title.trimStart().trimEnd() +
-        '\n\n' +
-        'Article text:' + article.textContent.trimStart().trimEnd();
-}
-
-const url = 'https://www.nytimes.com/2023/05/26/us/politics/russia-public-opinion-ukraine-war.html';
-const lol = await checkArchive(url);
-if (lol !== null) {
-    const kek = await getReadableObj(lol);
-    console.log(kek);
+            if (archiveURL) {
+                console.log(`URL not available. You can view the archived version here: ${archiveURL}`);
+                const html = await getPageHTML(archiveURL);
+                const obj = await getReadableObj(html, archiveURL);
+                return textFromObj(obj);
+            }
+        }
+        throw error;
+    }
 }
