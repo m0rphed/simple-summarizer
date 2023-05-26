@@ -1,0 +1,22 @@
+[project]
+name = "summarizer_model_provider"
+version = "0.0.1"
+description = ""
+authors = [
+    { name = "Vic Khov", email = "victorkhovtko@gmail.com" }
+]
+dependencies = [
+    "transformers>=4.29.2",
+    "torch>=2.0.1",
+]
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[[tool.pdm.source]]
+url = "https://download.pytorch.org/whl/cu117"
+verify_ssl = true
+name = "torch"
+[tool.pdm.dev-dependencies]
+dev = [
+    "yapf>=0.33.0",
+]
