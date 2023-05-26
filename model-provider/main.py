@@ -1,30 +1,29 @@
 import torch
+from fastapi import FastAPI
 from transformers import pipeline
-import os
+
+MODEL_NAME = "pszemraj/long-t5-tglobal-base-16384-book-summary"
+
+app = FastAPI()
 
 
-def get_sample(filename: str, data_subdir=".tmp") -> str:
-    file_path = os.path.join(data_subdir, filename)
-    with open(file_path, 'r') as file:
-        content = file.read()
-        return content
+@app.get("/")
+def read_root():
+    return {"message": "Summarization API"}
 
 
-# do a simple summarization
-def main(model_name: str):
+@app.post("/summarize")
+def summarize_text(text: str):
     summarizer = pipeline(
         "summarization",
-        model_name,
+        MODEL_NAME,
         device=0 if torch.cuda.is_available() else -1,
     )
-
-    # loads text sample for summarization
-    input = get_sample("01-navy-seals-copypasta.txt")
-    result = summarizer(input)
-    print(result[0]["summary_text"])
+    result = summarizer(text)
+    summary = result[0]["summary_text"]
+    return {"summary": summary}
 
 
 if __name__ == "__main__":
-    # I am not sure that this model is the best choice, but so far results are quite satisfying
-    MODEL_NAME = "pszemraj/long-t5-tglobal-base-16384-book-summary"
-    main(MODEL_NAME)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
