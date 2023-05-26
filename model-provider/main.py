@@ -8,8 +8,8 @@ app = FastAPI()
 
 class SummarizationRequest(BaseModel):
     text: str
-    max_length: int = Field(..., ge=1)
-    # min_length: int = Field(..., ge=1)
+    max_length: int = Field(512, ge=1)
+    min_length: int = Field(256, ge=1)
     do_sample: bool = Field(True)
 
 
@@ -31,7 +31,7 @@ def summarize_text(request: SummarizationRequest):
     result = summarizer(
         request.text,
         max_length=request.max_length,
-        # min_length=request.min_length,
+        min_length=request.min_length,
         do_sample=request.do_sample,
     )
 
