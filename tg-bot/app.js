@@ -1,7 +1,7 @@
 import { Bot } from 'grammy';
-import { getTextSummary } from './summarization.js';
-import { getReadable } from './parsing.js';
+import fetch from 'node-fetch';
 import isURI from 'validate.io-uri';
+import { getReadableText } from './parsing.js';
 
 const bot = new Bot(process.env.TG_BOT_TOKEN);
 
@@ -15,14 +15,14 @@ bot.command('link', async (ctx) => {
   }
 
   try {
-    // fetch and extract the article text from specified URL
-    const articleBody = await getReadable(articleURL)
+    // fetch and extract the article text from the specified URL
+    const articleBody = await getReadableText(articleURL);
 
-    // trim article body
+    // trim the article body
     const trimmed = articleBody.substring(0, 200).trimStart();
-    console.log('Article body: ', trimmed, '...');
+    console.log('Article body:', trimmed, '...');
 
-    // get the summary (using HuggingFace models)
+    // get the summary by calling the summarization provider API
     const summary = await getTextSummary(trimmed);
 
     // send the summary as a response
@@ -35,8 +35,39 @@ bot.command('link', async (ctx) => {
 
 // handle the /start command.
 bot.command('start',
-  (ctx) => ctx.reply('Welcome to the article summarization bot! Use /link <URL> to get the summary of an article.')
+  (ctx) => {
+    ctx.reply('Welcome to the article summarization bot! Use /link <URL> to get the summary of an article.')
+  }
 );
 
 // start the bot.
 bot.start();
+
+// function to get the summary by calling the summarization provider API
+async function getTextSummary(text) {
+  // Parse API server IP from environment variable
+  const apiURL = process.env.MODEL_SERVER_IP +
+    ':' +
+    process.env.MODEL_SERVER_PORT
+    + '/summarize';
+
+  const response = await fetch(apiURL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text: text,
+      max_length: 1024,   // Modify as needed
+      min_length: 512,    // Modify as needed
+      do_sample: false,   // Modify as needed
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get the summary from service ${response.json()}`);
+  }
+
+  const data = await response.json();
+  return data.summary;
+}

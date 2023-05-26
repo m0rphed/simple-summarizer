@@ -1,6 +1,6 @@
 import { AutoModelForSeq2SeqLM, AutoTokenizer } from '@xenova/transformers';
 
-export const getTextSummary = async (text) => {
+export const getTextSummary = async (shortText) => {
     // should model name be a function parameter?
     const modelName = 'Xenova/t5-base';
 
@@ -8,7 +8,7 @@ export const getTextSummary = async (text) => {
     const tokenizer = await AutoTokenizer.from_pretrained(modelName);
     const model = await AutoModelForSeq2SeqLM.from_pretrained(modelName);
 
-    const { input_ids } = await tokenizer(`summarize: ${text}`);
+    const { input_ids } = await tokenizer(`summarize: ${shortText}`);
     const outputs = await model.generate(input_ids);
     const summary = tokenizer.decode(outputs[0][0], { skip_special_tokens: true });
 
