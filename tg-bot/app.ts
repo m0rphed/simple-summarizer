@@ -1,7 +1,7 @@
 import { Bot } from 'grammy';
 import fetch from 'node-fetch';
 import isURI from 'validate.io-uri';
-import { getReadableText } from './parsing.js';
+import { getReadableText } from './parsing';
 
 const bot = new Bot(process.env.TG_BOT_TOKEN);
 

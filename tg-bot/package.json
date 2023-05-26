@@ -1,24 +1,28 @@
 {
-  "name": "tg-summarizer",
-  "version": "1.0.0",
-  "description": "telegram bot summarizer",
+  "name": "tg-summarizer-bot",
+  "version": "0.0.1",
+  "description": "Telegram bot that gives summarization for an article by specified URL",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/app.js",
+    "build": "tsc",
+    "dev": "ts-node src/app.ts"
   },
+  "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.4"
+  },
   "dependencies": {
     "@mozilla/readability": "^0.4.4",
+    "@types/node-fetch": "^2.6.4",
     "@xenova/transformers": "^2.0.1",
     "axios": "^1.4.0",
     "dotenv": "^16.0.3",
     "grammy": "^1.16.1",
     "jsdom": "^22.0.0",
     "validate.io-uri": "^1.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.4"
   }
 }
