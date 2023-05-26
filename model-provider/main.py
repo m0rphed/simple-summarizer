@@ -1,10 +1,16 @@
 import torch
 from fastapi import FastAPI
+from pydantic import BaseModel, Field
 from transformers import pipeline
 
-MODEL_NAME = "pszemraj/long-t5-tglobal-base-16384-book-summary"
-
 app = FastAPI()
+
+
+class SummarizationRequest(BaseModel):
+    text: str
+    max_length: int = Field(..., ge=1)
+    # min_length: int = Field(..., ge=1)
+    do_sample: bool = Field(True)
 
 
 @app.get("/")
@@ -13,13 +19,22 @@ def read_root():
 
 
 @app.post("/summarize")
-def summarize_text(text: str):
+def summarize_text(request: SummarizationRequest):
+    model_name = "pszemraj/long-t5-tglobal-base-16384-book-summary"
+
     summarizer = pipeline(
-        "summarization",
-        MODEL_NAME,
+        task="summarization",
+        model=model_name,
         device=0 if torch.cuda.is_available() else -1,
     )
-    result = summarizer(text)
+
+    result = summarizer(
+        request.text,
+        max_length=request.max_length,
+        # min_length=request.min_length,
+        do_sample=request.do_sample,
+    )
+
     summary = result[0]["summary_text"]
     return {"summary": summary}
 
