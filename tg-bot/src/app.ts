@@ -1,12 +1,18 @@
-import { Bot } from 'grammy';
+import { Bot, Context } from 'grammy';
 import fetch from 'node-fetch';
-import isURI from 'validate.io-uri';
+import isURI from '@stdlib/assert-is-uri';
 import { getReadableText } from './parsing';
+
+if (!process.env.TG_BOT_TOKEN) {
+  throw new Error('Error: environment variable "TG_BOT_TOKEN" was not set');
+}
 
 const bot = new Bot(process.env.TG_BOT_TOKEN);
 
-bot.command('link', async (ctx) => {
-  const message = ctx.message.text;
+bot.command('link', async (ctx: Context) => {
+  const message = ctx.message?.text;
+  if (!message) return;
+
   const articleURL = message.split(' ')[1];
 
   if (!isURI(articleURL)) {
@@ -27,29 +33,26 @@ bot.command('link', async (ctx) => {
 
     // send the summary as a response
     ctx.reply(summary);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error:', error.message);
     ctx.reply('An error occurred while processing the article. Please try again later.');
   }
 });
 
 // handle the /start command.
-bot.command('start',
-  (ctx) => {
-    ctx.reply('Welcome to the article summarization bot! Use /link <URL> to get the summary of an article.')
-  }
-);
+bot.command('start', (ctx: Context) => {
+  ctx.reply('Welcome to the article summarization bot! Use /link <URL> to get the summary of an article.');
+});
 
 // start the bot.
 bot.start();
 
 // function to get the summary by calling the summarization provider API
-async function getTextSummary(text) {
+async function getTextSummary(text: string): Promise<string> {
   // Parse API server IP from environment variable
-  const apiURL = process.env.MODEL_SERVER_IP +
-    ':' +
-    process.env.MODEL_SERVER_PORT
-    + '/summarize';
+  process.env.MODEL_SERVER_IP
+
+  const apiURL = `${process.env.MODEL_SERVER_ADDR}/summarize`;
 
   const response = await fetch(apiURL, {
     method: 'POST',

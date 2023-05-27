@@ -1,6 +1,6 @@
 import { AutoModelForSeq2SeqLM, AutoTokenizer } from '@xenova/transformers';
 
-export const getTextSummary = async (shortText) => {
+export const getTextSummary = async (shortText: string) => {
     // should model name be a function parameter?
     const modelName = 'Xenova/t5-base';
 
