@@ -3,12 +3,15 @@ import fetch from 'node-fetch';
 import isURI from '@stdlib/assert-is-uri';
 import { getReadableText } from './parsing';
 
+// check that telegram token env variable is set 
 if (!process.env.TG_BOT_TOKEN) {
   throw new Error('Error: environment variable "TG_BOT_TOKEN" was not set');
 }
 
+// get telegram bot token, then start bot
 const bot = new Bot(process.env.TG_BOT_TOKEN);
 
+// handle '/link' bot command
 bot.command('link', async (ctx: Context) => {
   const message = ctx.message?.text;
   if (!message) return;
@@ -26,7 +29,7 @@ bot.command('link', async (ctx: Context) => {
 
     // trim the article body
     const trimmed = articleBody.substring(0, 200).trimStart();
-    console.log('Article body:', trimmed, '...');
+    console.log('Article: ', trimmed, '...');
 
     // get the summary by calling the summarization provider API
     const summary = await getTextSummary(trimmed);
@@ -53,6 +56,8 @@ async function getTextSummary(text: string): Promise<string> {
   process.env.MODEL_SERVER_IP
 
   const apiURL = `${process.env.MODEL_SERVER_ADDR}/summarize`;
+  
+  console.log(apiURL);
 
   const response = await fetch(apiURL, {
     method: 'POST',

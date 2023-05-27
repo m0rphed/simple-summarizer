@@ -59,7 +59,7 @@ const getReadableObj = async (pageHTML: string, pageURL: string): Promise<any> =
 };
 
 export const textFromObj = (articleObj: any): string => {
-    return `Title: ${articleObj.title}\n\n ${articleObj.text_body}`;
+    return `${articleObj.title}\n\n${articleObj.text_body}`;
 };
 
 export const getReadableText = async (articleURL: string): Promise<string> => {
