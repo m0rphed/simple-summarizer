@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import isURI from '@stdlib/assert-is-uri';
 
 
-const getHTML = async (pageURL: string): Promise<string> => {
+const getHTML = async function (pageURL: string): Promise<string> {
     if (!isURI(pageURL)) {
         throw new Error(`Error: invalid URL: ${pageURL}`);
     }
@@ -14,31 +14,52 @@ const getHTML = async (pageURL: string): Promise<string> => {
     return response.data;
 };
 
-const checkArchive = async (pageURL: string): Promise<string | null> => {
-    const googleCacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${pageURL}`;
-    const waybackMachineUrl = `https://web.archive.org/save/${pageURL}`;
+const checkWaybackMachine = async function (pageURL: string): Promise<string | null> {
+    const waybackURL = `https://web.archive.org/save/${pageURL}`;
+    const resp = await fetch(waybackURL);
 
+    if (resp.status === 200) {
+        return waybackURL;
+    }
+
+    return null;
+};
+
+const checkGoogleCache = async function (pageURL: string): Promise<string | null> {
+    const googleCacheURL = `https://webcache.googleusercontent.com/search?q=cache:${pageURL}`;
+    const resp = await fetch(googleCacheURL);
+
+    if (resp.status === 200) {
+        return googleCacheURL;
+    }
+
+    return null;
+};
+
+const checkArchives = async function (pageURL: string) {
     // Check Google Cache
-    const googleCacheResponse = await fetch(googleCacheUrl);
-    if (googleCacheResponse.status === 200) {
+    const respGoogleCache = await checkGoogleCache(pageURL);
+    if (respGoogleCache) {
         console.log('Google Cache: ✅');
-        return googleCacheUrl;
+        return respGoogleCache;
     }
 
     console.log('Google Cache: ❌');
 
     // Check Wayback Machine
-    const waybackMachineResponse = await fetch(waybackMachineUrl);
-    if (waybackMachineResponse.status === 200) {
+    const respWaybackMachine = await checkWaybackMachine(pageURL);
+    if (respWaybackMachine) {
         console.log('Wayback Machine: ✅');
-        return waybackMachineUrl;
+        return respWaybackMachine;
     }
 
     console.log('Wayback Machine: ❌');
-    return null; // URL not available in Google Cache or Wayback Machine
+
+    // URL not available in Google Cache or Wayback Machine
+    return null;
 };
 
-const getReadableObj = async (pageHTML: string, pageURL: string): Promise<any> => {
+export const getReadableObj = async function (pageHTML: string, pageURL: string) {
     // extract the article text using mozilla's readability lib
     const dom = new JSDOM(pageHTML, { url: pageURL });
     const reader = new Readability(dom.window.document);
@@ -58,28 +79,40 @@ const getReadableObj = async (pageHTML: string, pageURL: string): Promise<any> =
     return resObj;
 };
 
-export const textFromObj = (articleObj: any): string => {
-    return `${articleObj.title}\n\n${articleObj.text_body}`;
+export const getReadableText = async function (pageURL: string) {
+    const html = await getHTML(pageURL);
+    const obj = await getReadableObj(html, pageURL);
+    return textFromObj(obj);
 };
 
-export const getReadableText = async (articleURL: string): Promise<string> => {
+export const getReadableObjFromArchives = async function (pageURL: string) {
     try {
-        const html = await getHTML(articleURL);
-        const obj = await getReadableObj(html, articleURL);
-        return textFromObj(obj);
+        const html = await getHTML(pageURL);
+        return await getReadableObj(html, pageURL);
     } catch (error: any) {
         if (error.response && (error.response.status === 404 || error.response.status === 403)) {
             console.log('❌ Problems with URL, checking in archives...');
-            // Fetching failed with 404 or 403 response, check archive
-            const archiveURL = await checkArchive(articleURL);
-
-            if (archiveURL) {
-                console.log(`URL not available. You can view the archived version here: ${archiveURL}`);
-                const html = await getHTML(archiveURL);
-                const obj = await getReadableObj(html, archiveURL);
-                return textFromObj(obj);
+            const archivedURL = await checkArchives(pageURL);
+            if (!archivedURL) {
+                throw new Error(
+                    `Error: problem fetching page ${pageURL}; Neither any archived copies were found`
+                );
             }
+
+            const html = await getHTML(archivedURL);
+            return await getReadableObj(html, archivedURL);
         }
+
         throw error;
     }
+};
+
+export const textFromObj = function (articleObj: any): string {
+    return `${articleObj.title}\n\n${articleObj.text_body}`;
+};
+
+
+export const getReadableTextFromArchives = async function (pageURL: string) {
+    const obj = await getReadableObjFromArchives(pageURL);
+    return textFromObj(obj);
 };

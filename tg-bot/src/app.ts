@@ -1,7 +1,7 @@
 import { Bot, Context } from 'grammy';
 import fetch from 'node-fetch';
 import isURI from '@stdlib/assert-is-uri';
-import { getReadableText } from './parsing';
+import { getReadableTextFromArchives as checkAndGetText } from './parsing';
 
 // check that telegram token env variable is set 
 if (!process.env.TG_BOT_TOKEN) {
@@ -25,10 +25,10 @@ bot.command('link', async (ctx: Context) => {
 
   try {
     // fetch and extract the article text from the specified URL
-    const articleBody = await getReadableText(articleURL);
+    const articleText = await checkAndGetText(articleURL);
 
     // trim the article body
-    const trimmed = articleBody.substring(0, 200).trimStart();
+    const trimmed = articleText.substring(0, 200).trimStart();
     console.log('Article: ', trimmed, '...');
 
     // get the summary by calling the summarization provider API
@@ -56,7 +56,7 @@ async function getTextSummary(text: string): Promise<string> {
   process.env.MODEL_SERVER_IP
 
   const apiURL = `${process.env.MODEL_SERVER_ADDR}/summarize`;
-  
+
   console.log(apiURL);
 
   const response = await fetch(apiURL, {
